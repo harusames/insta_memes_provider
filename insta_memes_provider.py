@@ -3,10 +3,17 @@ from time import sleep
 
 from dotenv import load_dotenv
 from selenium import webdriver
-from selenium.common import NoSuchElementException
+from selenium.common import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.wait import WebDriverWait
+
+
+def try_catch(try_function, catch_function, exception=Exception):
+    try:
+        return try_function()
+    except exception as e:
+        return catch_function(e)
 
 
 driver = webdriver.Chrome()
@@ -102,26 +109,32 @@ while latest_post_reverse_index <= anchors_size():
     # if descendant():
     # if next(iter(anchors()[-latest_post_reverse_index].find_elements(By.XPATH, './ancestor::div[@role="button" and @aria-label="Double tap to like"]/.//span[contains(text(), "❤️")]')), None):
     # if descendant_v:
-    if next(iter(driver.find_elements(By.XPATH, "//a[@aria-label='Preview']")[-latest_post_reverse_index].find_element(By.XPATH, './ancestor::div[@role="button" and @aria-label="Double tap to like"]').find_elements(By.XPATH, './/span[contains(text(), "❤️")]')), None):
-        break
-    else:
-        latest_post_reverse_index += 1
-        driver.execute_script("arguments[0].scrollIntoView();", anchors()[0])
-        driver.execute_script(f"{find_scrollbar}.scrollTop -= {1000}")
-        # driver.find_element_by_xpath('//div[@aria-label="abc"]//*[contains(@style, "overflow-y: scroll")]')
-        # driver.find_element_by_xpath('//div[@aria-label="Messages in conversation with {os.environ.get('INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME')}"]//*[contains(@style, "overflow-y: scroll")]')
-        # driver.find_element_by_xpath(f'//div[@aria-label="Messages in conversation with {os.environ.get("INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME")}"]//*[contains(@style, "overflow-y: scroll")]')
-        # driver.find_elements(By.XPATH, f'//div[@aria-label="Messages in conversation with {os.environ.get("INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME")}"]//*[contains(@style, "overflow-y: scroll")]') # returns 0
-        # driver.find_elements(By.XPATH, f'//div[@aria-label="Messages in conversation with {os.environ.get("INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME")}"]') # works
-        # driver.find_elements(By.XPATH, "//div[contains(@style, 'height')]")[0] # works
+    try:
+        if next(iter(
+                driver.find_elements(By.XPATH, "//a[@aria-label='Preview']")[-latest_post_reverse_index].find_element(
+                        By.XPATH, './ancestor::div[@role="button" and @aria-label="Double tap to like"]').find_elements(
+                        By.XPATH, './/span[contains(text(), "❤️")]')), None):
+            break
+        else:
+            latest_post_reverse_index += 1
+            driver.execute_script("arguments[0].scrollIntoView();", anchors()[0])
+            driver.execute_script(f"{find_scrollbar}.scrollTop -= {scroll_size}")
+            # driver.find_element_by_xpath('//div[@aria-label="abc"]//*[contains(@style, "overflow-y: scroll")]')
+            # driver.find_element_by_xpath('//div[@aria-label="Messages in conversation with {os.environ.get('INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME')}"]//*[contains(@style, "overflow-y: scroll")]')
+            # driver.find_element_by_xpath(f'//div[@aria-label="Messages in conversation with {os.environ.get("INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME")}"]//*[contains(@style, "overflow-y: scroll")]')
+            # driver.find_elements(By.XPATH, f'//div[@aria-label="Messages in conversation with {os.environ.get("INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME")}"]//*[contains(@style, "overflow-y: scroll")]') # returns 0
+            # driver.find_elements(By.XPATH, f'//div[@aria-label="Messages in conversation with {os.environ.get("INSTAGRAM_INSTA_MEMES_PROVIDER_DM_TARGET_NAME")}"]') # works
+            # driver.find_elements(By.XPATH, "//div[contains(@style, 'height')]")[0] # works
 
-        # document.evaluate("//div[contains(@aria-label, 'Messages in conversation with')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+            # document.evaluate("//div[contains(@aria-label, 'Messages in conversation with')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
 
-        # document.evaluate(`//div[contains(@aria-label, 'Messages in conversation with')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue # works
-        # driver.execute_script("document.evaluate(`//div[contains(@aria-label, 'Messages in conversation with')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue")
+            # document.evaluate(`//div[contains(@aria-label, 'Messages in conversation with')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue # works
+            # driver.execute_script("document.evaluate(`//div[contains(@aria-label, 'Messages in conversation with')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue")
 
-        # driver.execute_script("return document.evaluate(`//div[contains(@aria-label, 'Messages in conversation with')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue")
-        driver.implicitly_wait(1)
+            # driver.execute_script("return document.evaluate(`//div[contains(@aria-label, 'Messages in conversation with')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue")
+            driver.implicitly_wait(1)
+    except StaleElementReferenceException:
+        pass
 
 
 
