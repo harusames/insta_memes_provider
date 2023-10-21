@@ -1,9 +1,31 @@
+
+const DRY_RUN = true;
+const response = {};
+
+
 const anchors = () => Array.from(document.querySelectorAll('a[aria-label="Preview"]'))
 const anchors_length = () => anchors().length
-const is_liked = (reverse_index) => [...anchors()
+const isLiked = (reverse_index) => [...anchors()
     .find((_, index, array) => index === array.length - reverse_index)
     .closest('div[role="button"][aria-label="Double tap to like"]')
     .querySelectorAll('span')].find(span => span.textContent === '❤️');
+
+const doubleClickAtCoordinates = (element, x=0, y=0) => {
+    // Get the bounding rectangle of the element
+    const rect = element.getBoundingClientRect();
+
+    // Calculate the absolute coordinates within the viewport
+    const absoluteX = rect.left + x;
+    const absoluteY = rect.top + y;
+
+    // Create a new MouseEvent with the appropriate properties
+    const clickEvent = new MouseEvent('dblclick', {
+        bubbles: true, cancelable: true, view: window, clientX: absoluteX, clientY: absoluteY,
+    });
+
+    // Dispatch the click event on the element
+    element.dispatchEvent(clickEvent);
+}
 
 /** test index **/
 // for (let i = 0; i < anchors_length(); i++) {
@@ -20,10 +42,9 @@ const SCROLL_SIZE = 100;
 
 let latest_post_reverse_index = 1
 while (latest_post_reverse_index <= anchors_length()) {
-    if (is_liked(latest_post_reverse_index)) {
+    if (isLiked(latest_post_reverse_index)) {
         break;
-    }
-    else {
+    } else {
         latest_post_reverse_index++;
         anchors()[0].scrollIntoView();
         scrollbar.scrollTop -= SCROLL_SIZE;
@@ -32,9 +53,16 @@ while (latest_post_reverse_index <= anchors_length()) {
 }
 
 const unliked_post_start_index = anchors_length() - latest_post_reverse_index + 1;
-const response = {};
-response["links_backup"] = anchors().slice(unliked_post_start_index).map(anchor => anchor.href);
+response["links"] = anchors().slice(unliked_post_start_index).map(anchor => anchor.href.replace('https://www.instagram.com/reel/', 'https://www.instagram.com/p/'));
+response["links_as_text"] = response["links"].join('\n') + '\n';
+console.log(response["links_as_text"])
 
-anchors().slice(unliked_post_start_index).forEach(anchor => {
+for (let i = unliked_post_start_index; i < anchors_length() && !DRY_RUN; i++) {
+    const anchor = anchors()[i];
+    doubleClickAtCoordinates(anchor);
+    await new Promise(r => setTimeout(r, 1000));
+    // index + reverse_index = length
+    if (!isLiked(anchors_length() - i)) response["logs"] += `Failed to like index=${i} ${anchor.href}\n`;
+}
 
-});
+response
