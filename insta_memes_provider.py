@@ -63,12 +63,3 @@ response = driver.execute_script(f"{script}")
 # TODO: save response and logs to file (ONLY IF THE SCRIPT WORKED... :C)
 
 print()
-
-# TODO: move this insta_memes_provider_downloader.py + read links from file (which is program arg)
-for index, link in enumerate(response["links"]):
-    print(f'Downloading {index + 1}/{len(response["links"])}: {link}')
-    # os.system(f"curl -O {link}")
-    # gpt: python run yt-dlp with folder and link and return exit code
-
-    # TODO: idea: manually run the js script but add file save for links_as_text and for logs (save file with links before liking)
-    #   add timestamp to filename

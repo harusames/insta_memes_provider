@@ -55,7 +55,7 @@ while (latest_post_reverse_index <= anchors_length()) {
 const unliked_post_start_index = anchors_length() - latest_post_reverse_index + 1;
 response["links"] = anchors().slice(unliked_post_start_index).map(anchor => anchor.href.replace('https://www.instagram.com/reel/', 'https://www.instagram.com/p/'));
 response["links_as_text"] = response["links"].join('\n') + '\n';
-console.log(response["links_as_text"])
+// TODO: prompt to save links_as_text to file (with datetime stamp) & copy it to clipboard
 
 for (let i = unliked_post_start_index; i < anchors_length() && !DRY_RUN; i++) {
     const anchor = anchors()[i];
@@ -64,5 +64,5 @@ for (let i = unliked_post_start_index; i < anchors_length() && !DRY_RUN; i++) {
     // index + reverse_index = length
     if (!isLiked(anchors_length() - i)) response["logs"] += `Failed to like index=${i} ${anchor.href}\n`;
 }
-
+// TODO: prompt to save logs to file (with datetime stamp) & copy it to clipboard
 response
