@@ -12,9 +12,6 @@ errors_found = False
 
 for index, link in enumerate(links):
     print(f'Downloading {index + 1}/{len(links)}: {link}')
-    # os.system(f"curl -O {link}")
-    # gpt: python run yt-dlp with folder and link and return exit code
-
     # TODO: idea: manually run the js script but add file save for links_as_text and for logs (save file with links before liking)
     #   add timestamp to filename
     try:

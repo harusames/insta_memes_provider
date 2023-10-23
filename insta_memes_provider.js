@@ -38,31 +38,77 @@ const scrollbar = [...document.querySelectorAll('div[aria-label*="Messages in co
         const computedStyle = window.getComputedStyle(child);
         return computedStyle.getPropertyValue('overflow-y') === 'scroll';
     });
-const SCROLL_SIZE = 100;
+const SCROLL_SIZE = 350;
+const canScroll = {value: true};
 
+const scrollUp = async () => {
+    if (!canScroll.value) return;
+    const oldScrollValue = scrollbar.scrollTop;
+    canScroll.value = (scrollbar.scrollTop -= SCROLL_SIZE) !== oldScrollValue;
+    console.log(`waiting canScroll=${canScroll.value} oldScrollValue=${oldScrollValue} scrollbar.scrollTop=${scrollbar.scrollTop}`)
+    await new Promise(r => setTimeout(r, 1000));
+}
+
+const save_file = (filename, text) => {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
+const format_date = () => new Date().toISOString().replaceAll(":", "-");
+// TODO: handle scrolling better
+const start = new Date();
 let latest_post_reverse_index = 1
 while (latest_post_reverse_index <= anchors_length()) {
+    console.log(`latest_post_reverse_index=${latest_post_reverse_index} anchors_length()=${anchors_length()}`);
     if (isLiked(latest_post_reverse_index)) {
         break;
     } else {
         latest_post_reverse_index++;
+        // try {
+        //     anchors()[anchors_length() - latest_post_reverse_index].scrollIntoView();
+        // }
+        // catch (e) {
+        // }
+        // scrollbar.scrollTop -= SCROLL_SIZE;
         anchors()[0].scrollIntoView();
-        scrollbar.scrollTop -= SCROLL_SIZE;
-        await new Promise(r => setTimeout(r, 1000));
+        await scrollUp();
     }
 }
+const end = new Date();
+[`took ${end - start} ms latest_post_reverse_index=${latest_post_reverse_index}`].forEach(line => {
+    console.log(line);
+    response["logs"] += line + '\n';
+});
 
 const unliked_post_start_index = anchors_length() - latest_post_reverse_index + 1;
 response["links"] = anchors().slice(unliked_post_start_index).map(anchor => anchor.href.replace('https://www.instagram.com/reel/', 'https://www.instagram.com/p/'));
 response["links_as_text"] = response["links"].join('\n') + '\n';
-// TODO: prompt to save links_as_text to file (with datetime stamp) & copy it to clipboard
+
+// TODO: handle focus for clipboard
+alert('Saving files');
+navigator.clipboard.writeText(response["links_as_text"]);
+save_file(`links_as_text_${format_date()}.txt`, response["links_as_text"]);
 
 for (let i = unliked_post_start_index; i < anchors_length() && !DRY_RUN; i++) {
     const anchor = anchors()[i];
     doubleClickAtCoordinates(anchor);
     await new Promise(r => setTimeout(r, 1000));
     // index + reverse_index = length
-    if (!isLiked(anchors_length() - i)) response["logs"] += `Failed to like index=${i} ${anchor.href}\n`;
+    if (!isLiked(anchors_length() - i)) response["errors"] += `Failed to like index=${i} ${anchor.href}\n`;
 }
-// TODO: prompt to save logs to file (with datetime stamp) & copy it to clipboard
-response
+
+// TODO: handle focus for clipboard
+navigator.clipboard.writeText(response["logs"]);
+save_file(`logs_${format_date()}.txt`, response["logs"]);
+
+if (response["errors"].length > 0) {
+    navigator.clipboard.writeText(response["errors"]);
+// TODO: handle focus for clipboard
+    save_file(`errors_${format_date()}.txt`, response["errors"]);
+}
+// response
