@@ -59,9 +59,10 @@ def prepare():
 
 script = read_file(os.path.join(os.path.dirname(__file__), "insta_memes_provider.js"))
 driver = prepare()
-driver.set_script_timeout(10 * 60)
-# TODO: try to save the response
-response = driver.execute_script(f"{script}")
-# TODO: save response and logs to file (ONLY IF THE SCRIPT WORKED... :C)
+driver.set_script_timeout(5 * 60)
+
+response = driver.execute_script(f"{script} return response;")
+# TODO: save links_as_text, logs, errors
+# TODO: call downloader with links_as_text
 
 print()

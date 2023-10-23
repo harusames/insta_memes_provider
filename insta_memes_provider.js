@@ -1,6 +1,6 @@
 
 const DRY_RUN = true;
-const response = {};
+const response = {logs: '', errors: '', links: [], links_as_text: ''};
 
 
 const anchors = () => Array.from(document.querySelectorAll('a[aria-label="Preview"]'))
@@ -38,16 +38,6 @@ const scrollbar = [...document.querySelectorAll('div[aria-label*="Messages in co
         const computedStyle = window.getComputedStyle(child);
         return computedStyle.getPropertyValue('overflow-y') === 'scroll';
     });
-const SCROLL_SIZE = 350;
-const canScroll = {value: true};
-
-const scrollUp = async () => {
-    if (!canScroll.value) return;
-    const oldScrollValue = scrollbar.scrollTop;
-    canScroll.value = (scrollbar.scrollTop -= SCROLL_SIZE) !== oldScrollValue;
-    console.log(`waiting canScroll=${canScroll.value} oldScrollValue=${oldScrollValue} scrollbar.scrollTop=${scrollbar.scrollTop}`)
-    await new Promise(r => setTimeout(r, 1000));
-}
 
 const save_file = (filename, text) => {
     const element = document.createElement('a');
@@ -60,23 +50,22 @@ const save_file = (filename, text) => {
 }
 
 const format_date = () => new Date().toISOString().replaceAll(":", "-");
-// TODO: handle scrolling better
-const start = new Date();
+
+
+const SCROLL_SIZE = 400;
 let latest_post_reverse_index = 1
-while (latest_post_reverse_index <= anchors_length()) {
+
+const start = new Date();
+while (true) {
+    while (!(latest_post_reverse_index <= anchors_length())) {
+        scrollbar.scrollTop -= SCROLL_SIZE;
+        await new Promise(r => setTimeout(r, 0));
+    }
     console.log(`latest_post_reverse_index=${latest_post_reverse_index} anchors_length()=${anchors_length()}`);
     if (isLiked(latest_post_reverse_index)) {
         break;
     } else {
         latest_post_reverse_index++;
-        // try {
-        //     anchors()[anchors_length() - latest_post_reverse_index].scrollIntoView();
-        // }
-        // catch (e) {
-        // }
-        // scrollbar.scrollTop -= SCROLL_SIZE;
-        anchors()[0].scrollIntoView();
-        await scrollUp();
     }
 }
 const end = new Date();
@@ -89,10 +78,8 @@ const unliked_post_start_index = anchors_length() - latest_post_reverse_index + 
 response["links"] = anchors().slice(unliked_post_start_index).map(anchor => anchor.href.replace('https://www.instagram.com/reel/', 'https://www.instagram.com/p/'));
 response["links_as_text"] = response["links"].join('\n') + '\n';
 
-// TODO: handle focus for clipboard
-alert('Saving files');
-navigator.clipboard.writeText(response["links_as_text"]);
-save_file(`links_as_text_${format_date()}.txt`, response["links_as_text"]);
+
+// save_file(`links_as_text_${format_date()}.txt`, response["links_as_text"]);
 
 for (let i = unliked_post_start_index; i < anchors_length() && !DRY_RUN; i++) {
     const anchor = anchors()[i];
@@ -102,13 +89,15 @@ for (let i = unliked_post_start_index; i < anchors_length() && !DRY_RUN; i++) {
     if (!isLiked(anchors_length() - i)) response["errors"] += `Failed to like index=${i} ${anchor.href}\n`;
 }
 
-// TODO: handle focus for clipboard
-navigator.clipboard.writeText(response["logs"]);
-save_file(`logs_${format_date()}.txt`, response["logs"]);
+// save_file(`logs_${format_date()}.txt`, response["logs"]);
 
-if (response["errors"].length > 0) {
-    navigator.clipboard.writeText(response["errors"]);
-// TODO: handle focus for clipboard
-    save_file(`errors_${format_date()}.txt`, response["errors"]);
+if (response["errors"] && response["errors"].length > 0) {
+    // save_file(`errors_${format_date()}.txt`, response["errors"]);
 }
-// response
+localStorage.setItem('response', JSON.stringify(response));
+
+/** no longer needed **/
+// alert('Saving files'); // to handle losing focus when pasting into clipboard
+// navigator.clipboard.writeText(response["links_as_text"]);
+// navigator.clipboard.writeText(response["logs"]);
+// navigator.clipboard.writeText(response["errors"]);
